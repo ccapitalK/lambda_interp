@@ -2,11 +2,15 @@ use token::Expr;
 
 grammar;
 
-pub LambdaExpr: Expr<'input> = {
+pub LambdaExprP: Expr<'input> = {
     <n:Name> => Expr::Name(n),
-    "(" <l1:LambdaExpr> ")" "(" <l2:LambdaExpr> ")" => Expr::Application(Box::new(l1), Box::new(l2)),
-    r"\\" <n:Name> r"\." <l:LambdaExpr> => Expr::Lambda(n, Box::new(l)),
+    r"\\" <n:Name> r"\." <l:LambdaExprP> => Expr::Lambda(n, Box::new(l)),
     "(" <LambdaExpr> ")",
+};
+
+pub LambdaExpr: Expr<'input> = {
+    LambdaExprP,
+    <l1:LambdaExpr> <l2:LambdaExprP> => Expr::Application(Box::new(l1), Box::new(l2)),
 };
 
 Name: &'input str = <s:r"[a-zA-Z]+"> => s;

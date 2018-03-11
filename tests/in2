@@ -1,0 +1,7 @@
+(\ true .
+(\ false .
+(\ if .(
+((if true) false) true
+)(\ c . \ t . \ f . ((c t) f)))
+(\ a . \ b . b))
+(\ a . \ b . a))
