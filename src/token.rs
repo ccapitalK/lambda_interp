@@ -1,5 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
+use std::collections::HashSet;
 
+/// Type for arbitrary lambda expression
 #[derive(Debug, Clone)]
 pub enum Expr<'input> {
     Application(Box<Expr<'input>>, Box<Expr<'input>>),
@@ -8,6 +10,7 @@ pub enum Expr<'input> {
 }
 
 impl<'input> Expr<'input> {
+    /// Performs one B-reduction according to the reduction rules
     pub fn reduce(expr: Expr<'input>, name: &'input str, value: Expr<'input>) -> Expr<'input> {
         match expr {
             Expr::Lambda(a, b) => if a == name {
@@ -28,6 +31,7 @@ impl<'input> Expr<'input> {
             }
         }
     }
+    /// Continually B-reduces whilst the outermost expression is an application
     pub fn evaluate(mut expr: Expr<'input>) -> Expr<'input> {
         loop {
             expr = match expr {
@@ -40,6 +44,35 @@ impl<'input> Expr<'input> {
                 v => return v,
             }
         }
+    }
+    fn is_valid_r(&self, names: &mut HashSet<&'input str>) -> ::std::result::Result<(), String> {
+        match self {
+            &Expr::Application(ref a, ref b) => {
+                a.is_valid_r(names)?;
+                b.is_valid_r(names)
+            }
+            &Expr::Lambda(name, ref val) => {
+                let shadow = names.contains(name);
+                if !shadow { 
+                    names.insert(name); 
+                }
+                val.is_valid_r(names)?;
+                if !shadow { 
+                    names.remove(name);
+                }
+                Ok(())
+            }
+            &Expr::Name(name) => if names.contains(name) {
+                Ok(())
+            } else {
+                Err(format!("Unbound variable name {}", name))
+            }
+        }
+    }
+    /// Checks if an expression has any unbound variables
+    pub fn has_unbound(&self) -> ::std::result::Result<(), String> {
+        let mut x = Default::default();
+        self.is_valid_r(&mut x)
     }
 }
 

@@ -7,7 +7,20 @@ use std::io::{Read, Write};
 
 fn main() {
     let eval = |input: String| {
-        let expr = parse::parse_LambdaExpr(&input).unwrap();
+        let expr = match parse::parse_LambdaExpr(&input) {
+            Ok(v) => v,
+            Err(e) => {
+                println!("Failed to parse line: {:?}", e);
+                return;
+            }
+        };
+        match expr.has_unbound() {
+            Err(e) => {
+                println!("Input {:?} not valid: {}", expr, e);
+                return;
+            }
+            _ => {}
+        };
         println!("Before evaluation:\n{}", expr);
         let expr = token::Expr::evaluate(expr);
         println!("After evaluation:\n{}", expr);
