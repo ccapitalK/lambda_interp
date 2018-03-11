@@ -1,0 +1,12 @@
+use token::Expr;
+
+grammar;
+
+pub LambdaExpr: Expr<'input> = {
+    <n:Name> => Expr::Name(n),
+    "(" <l1:LambdaExpr> ")" "(" <l2:LambdaExpr> ")" => Expr::Application(Box::new(l1), Box::new(l2)),
+    r"\\" <n:Name> r"\." <l:LambdaExpr> => Expr::Lambda(n, Box::new(l)),
+    "(" <LambdaExpr> ")",
+};
+
+Name: &'input str = <s:r"[a-zA-Z]+"> => s;

@@ -1,0 +1,3 @@
+src/parse.rs
+/target/
+**/*.rs.swp
