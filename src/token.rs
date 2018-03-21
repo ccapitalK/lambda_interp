@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter, Result};
 use std::collections::HashSet;
 
 /// Type for arbitrary lambda expression
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr<'input> {
     Application(Box<Expr<'input>>, Box<Expr<'input>>),
     Lambda(&'input str, Box<Expr<'input>>),
@@ -45,18 +45,19 @@ impl<'input> Expr<'input> {
             }
         }
     }
-    fn is_valid_r(&self, names: &mut HashSet<&'input str>) -> ::std::result::Result<(), String> {
+    // Helper function for has_unbound
+    fn has_unbound_r(&self, names: &mut HashSet<&'input str>) -> ::std::result::Result<(), String> {
         match self {
             &Expr::Application(ref a, ref b) => {
-                a.is_valid_r(names)?;
-                b.is_valid_r(names)
+                a.has_unbound_r(names)?;
+                b.has_unbound_r(names)
             }
             &Expr::Lambda(name, ref val) => {
                 let shadow = names.contains(name);
                 if !shadow { 
                     names.insert(name); 
                 }
-                val.is_valid_r(names)?;
+                val.has_unbound_r(names)?;
                 if !shadow { 
                     names.remove(name);
                 }
@@ -72,22 +73,92 @@ impl<'input> Expr<'input> {
     /// Checks if an expression has any unbound variables
     pub fn has_unbound(&self) -> ::std::result::Result<(), String> {
         let mut x = Default::default();
-        self.is_valid_r(&mut x)
+        self.has_unbound_r(&mut x)
+    }
+    // returns precedence of operator
+    fn precedence(&self) -> u8 {
+        match self {
+            &Expr::Application(_, _) => 1,
+            &Expr::Lambda(_, _) => 0,
+            &Expr::Name(_) => 2,
+        }
+    }
+    // returns true if expression is just a name
+    fn is_name(&self) -> bool {
+        if let &Expr::Name(_) = self {
+            true
+        } else {
+            false
+        }
+    }
+    // returns true if expression is an application
+    fn is_application(&self) -> bool {
+        if let &Expr::Application(_, _) = self {
+            true
+        } else {
+            false
+        }
+    }
+    // returns true if expression is a lambda abstraction
+    fn is_lambda(&self) -> bool {
+        if let &Expr::Lambda(_, _) = self {
+            true
+        } else {
+            false
+        }
     }
 }
 
 impl<'input> Display for Expr<'input> {
     fn fmt(&self, f: &mut Formatter) -> Result {
+        // TODO: Make this only parenthesize as needed
         match self {
             &Expr::Application(ref a, ref b) => {
-                write!(f, "({} {})", a, b)
+                if a.is_lambda() {
+                    write!(f, "({}) ", a)?;
+                } else {
+                    write!(f, "{} ", a)?;
+                }
+                if !b.is_name() {
+                    write!(f, "({})", b)
+                } else {
+                    write!(f, "{}", b)
+                }
             }
             &Expr::Lambda(ref a, ref b) => {
-                write!(f, "(λ {} . {})", a, b)
+                write!(f, "λ {} . {}", a, b)
             }
             &Expr::Name(n) => {
                 write!(f, "{}", n)
             }
         }
+    }
+}
+
+#[test]
+fn test_precedence_associativity() {
+    use self::Expr::*;
+    {
+        let input = r"\ x . x z (\ y . x y)";
+        let expr = ::parse::parse_LambdaExpr(input).unwrap();
+        // should be (\ x . ((x z) (\ y . (x y))))
+        assert_eq!(expr, 
+            Lambda(
+                "x",
+                Box::new(Application(
+                    Box::new(Application(
+                        Box::new(Name("x")),
+                        Box::new(Name("z"))
+                    )),
+                    Box::new(Lambda(
+                        "y",
+                        Box::new(Application(
+                            Box::new(Name("x")),
+                            Box::new(Name("y"))
+                        ))
+                    ))
+                ))
+            )
+        );
     }
 }
