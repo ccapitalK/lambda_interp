@@ -31,6 +31,7 @@ impl<'input> Expr<'input> {
             }
         }
     }
+
     /// Continually B-reduces whilst the outermost expression is an application
     pub fn evaluate(mut expr: Expr<'input>) -> Expr<'input> {
         loop {
@@ -45,7 +46,8 @@ impl<'input> Expr<'input> {
             }
         }
     }
-    // Helper function for has_unbound
+
+    /// Helper function for has_unbound
     fn has_unbound_r(&self, names: &mut HashSet<&'input str>) -> ::std::result::Result<(), String> {
         match self {
             &Expr::Application(ref a, ref b) => {
@@ -70,12 +72,14 @@ impl<'input> Expr<'input> {
             }
         }
     }
+
     /// Checks if an expression has any unbound variables
     pub fn has_unbound(&self) -> ::std::result::Result<(), String> {
         let mut x = Default::default();
         self.has_unbound_r(&mut x)
     }
-    // returns precedence of operator
+
+    /// returns precedence of operator
     fn precedence(&self) -> u8 {
         match self {
             &Expr::Application(_, _) => 1,
@@ -83,7 +87,8 @@ impl<'input> Expr<'input> {
             &Expr::Name(_) => 2,
         }
     }
-    // returns true if expression is just a name
+
+    /// returns true if expression is just a name
     fn is_name(&self) -> bool {
         if let &Expr::Name(_) = self {
             true
@@ -91,7 +96,9 @@ impl<'input> Expr<'input> {
             false
         }
     }
-    // returns true if expression is an application
+
+    /// returns true if expression is an application
+    #[allow(unused)]
     fn is_application(&self) -> bool {
         if let &Expr::Application(_, _) = self {
             true
@@ -99,7 +106,9 @@ impl<'input> Expr<'input> {
             false
         }
     }
-    // returns true if expression is a lambda abstraction
+
+    /// returns true if expression is a lambda abstraction
+    #[allow(unused)]
     fn is_lambda(&self) -> bool {
         if let &Expr::Lambda(_, _) = self {
             true
@@ -140,7 +149,7 @@ fn test_precedence_associativity() {
     use self::Expr::*;
     {
         let input = r"\ x . x z (\ y . x y)";
-        let expr = ::parse::parse_LambdaExpr(input).unwrap();
+        let expr = ::parse::LambdaExprParser::new().parse(input).unwrap();
         // should be (\ x . ((x z) (\ y . (x y))))
         assert_eq!(expr, 
             Lambda(

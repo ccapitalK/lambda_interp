@@ -1,4 +1,6 @@
-mod parse;
+#[macro_use] extern crate lalrpop_util;
+
+lalrpop_mod!(pub parse);
 mod token;
 
 use std::env::args;
@@ -7,7 +9,7 @@ use std::io::{Read, Write};
 
 fn main() {
     let eval = |input: String| {
-        let expr = match parse::parse_LambdaExpr(&input) {
+        let expr = match parse::LambdaExprParser::new().parse(&input) {
             Ok(v) => v,
             Err(e) => {
                 println!("Failed to parse line: {:?}", e);

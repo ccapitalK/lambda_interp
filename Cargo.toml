@@ -2,11 +2,10 @@
 name = "lambda"
 version = "0.1.0"
 authors = ["Sahan Fernando <sahan.h.fernando@gmail.com>"]
-build = "build.rs"
 
 [build-dependencies]
-lalrpop = "0.14.0"
+lalrpop = { version = "0.19.7", features = ["lexer"] }
 
 [dependencies]
-lalrpop-util = "0.14.0"
-regex = "0.2.1"
+lalrpop-util = "0.19.7"
+regex = "^1.5.5"
